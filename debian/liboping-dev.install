@@ -1,0 +1,6 @@
+usr/include/oping.h
+usr/lib/liboping.a
+usr/lib/liboping.so
+usr/share/man/man3/ping*
+usr/share/man/man3/liboping.3
+

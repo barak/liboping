@@ -1,7 +1,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([liboping],[1.6.2],[ff@octo.it],,[http://github.com/octo/liboping/])
+AC_INIT([liboping],
+	[1.7.0],
+	[liboping@verplant.org],
+	[],
+	[http://octo.it/liboping/])
 AC_CONFIG_SRCDIR([src/liboping.c])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -20,7 +24,7 @@ AC_SUBST(LIBOPING_PATCH)
 
 # ABI version
 LIBOPING_CURRENT=2
-LIBOPING_REVISION=9
+LIBOPING_REVISION=10
 LIBOPING_AGE=2
 AC_SUBST(LIBOPING_CURRENT)
 AC_SUBST(LIBOPING_REVISION)
@@ -48,10 +52,16 @@ LT_INIT([dlopen])
 # pkg-config interface
 PKG_INSTALLDIR
 
+AC_ARG_WITH(pkgconfigdir,
+	    AC_HELP_STRING([--with-pkgconfigdir], [Use the specified pkgconfig dir (default is libdir/pkgconfig)]),
+	    [pkgconfigdir="${withval}"],
+	    [pkgconfigdir='${libdir}/pkgconfig'])
+AC_SUBST([pkgconfigdir])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS([math.h signal.h fcntl.h inttypes.h netdb.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([math.h signal.h fcntl.h inttypes.h netdb.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h locale.h langinfo.h])
 
 # This sucks, but what can I do..?
 AC_CHECK_HEADERS(netinet/in_systm.h, [], [],
@@ -164,12 +174,16 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
+LIBOPING_PC_LIBS_PRIVATE=''
+
 socket_needs_socket="no"
 AC_CHECK_FUNCS(socket, [],
 	AC_CHECK_LIB(socket, socket,
 		[socket_needs_socket="yes"],
 		AC_MSG_ERROR(cannot find socket)))
-AM_CONDITIONAL(BUILD_WITH_LIBSOCKET, test "x$socket_needs_socket" = "xyes")
+if test "x$socket_needs_socket" = "xyes"; then
+	LIBOPING_PC_LIBS_PRIVATE="${LIBOPING_PC_LIBS_PRIVATE} -lsocket"
+fi
 
 # Under Solaris, the `xnet' library provides `recvmsg' which complies with the
 # X/Open CAE Specification.
@@ -179,7 +193,11 @@ if test "x$with_libxnet" = "xyes"
 then
 	CPPFLAGS="$CPPFLAGS -D_XPG4_2 -D__EXTENSIONS__"
 fi
-AM_CONDITIONAL(BUILD_WITH_LIBXNET, test "x$with_libxnet" = "xyes")
+if test "x$with_libxnet" = "xyes"; then
+	LIBOPING_PC_LIBS_PRIVATE="${LIBOPING_PC_LIBS_PRIVATE} -lxnet"
+fi
+
+AC_SUBST(LIBOPING_PC_LIBS_PRIVATE)
 
 nanosleep_needs_rt="no"
 AC_CHECK_FUNCS(nanosleep, [],
@@ -188,11 +206,25 @@ AC_CHECK_FUNCS(nanosleep, [],
 		AC_MSG_ERROR(cannot find nanosleep)))
 AM_CONDITIONAL(BUILD_WITH_LIBRT, test "x$nanosleep_needs_rt" = "xyes")
 
-with_ncurses="yes"
-AC_CHECK_HEADERS(ncurses.h, [with_ncurses="yes"], [with_ncurses="no"])
+with_ncurses="no"
+AC_CHECK_HEADERS(ncursesw/ncurses.h ncurses.h, [with_ncurses="yes"], [])
 if test "x$with_ncurses" = "xyes"
 then
-	AC_CHECK_LIB(ncurses, mvwprintw, [with_ncurses="yes"], [with_ncurses="no"])
+	have_ncursesw="no"
+	have_ncurses="no"
+	NCURSES_LIB=""
+
+	AC_CHECK_LIB(ncursesw, mvwprintw, [have_ncursesw="yes"], [have_ncursesw="no"])
+	AC_CHECK_LIB(ncurses, mvwprintw, [have_ncurses="yes"], [have_ncurses="no"])
+
+	if test "x$have_ncursesw" = "xyes"; then
+		NCURSES_LIB="-lncursesw"
+	else if test "x$have_ncurses" = "xyes"; then
+		NCURSES_LIB="-lncurses"
+	else
+		with_ncurses="no"
+	fi; fi
+	AC_SUBST(NCURSES_LIB)
 fi
 AM_CONDITIONAL(BUILD_WITH_LIBNCURSES, test "x$with_ncurses" = "xyes")
 
@@ -239,5 +271,5 @@ AC_FUNC_MALLOC
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([gettimeofday memset modf select socket sqrt strcasecmp strdup strerror strncasecmp strtoul])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/mans/Makefile bindings/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/liboping.pc src/mans/Makefile bindings/Makefile])
 AC_OUTPUT

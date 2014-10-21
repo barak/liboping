@@ -25,29 +25,9 @@ liboping_la_SOURCES = oping.h liboping.c
 
 liboping_la_CPPFLAGS = $(AM_CPPFLAGS)
 liboping_la_LDFLAGS = $(AM_LDFLAGS) -version-info @LIBOPING_CURRENT@:@LIBOPING_REVISION@:@LIBOPING_AGE@
-liboping_la_LIBADD =
-if BUILD_WITH_LIBSOCKET
-liboping_la_LIBADD += -lsocket
-endif
-if BUILD_WITH_LIBXNET
-liboping_la_LIBADD += -lxnet
-endif
+liboping_la_LIBADD = $(LIBOPING_PC_LIBS_PRIVATE)
 
-oping.pc:
-	echo 'prefix=$(prefix)'			>  $@
-	echo 'exec_prefix=$(exec_prefix)'	>> $@
-	echo 'includedir=$(includedir)'		>> $@
-	echo 'libdir=$(libdir)'			>> $@
-	echo					>> $@
-	echo 'Name: $(PACKAGE_TARNAME)'		>> $@
-	echo 'Description: $(PACKAGE_NAME)'	>> $@
-	echo 'URL: $(PACKAGE_URL)'		>> $@
-	echo 'Version: $(PACKAGE_VERSION)'	>> $@
-	echo 'Cflags: -I${includedir}'		>> $@
-	echo 'Libs: -L${libdir} -loping'	>> $@
-	echo 'Libs.private: $(AM_LDFLAGS) $(LIBS) $(liboping_la_LIBADD)'	>> $@
-
-pkgconfig_DATA = oping.pc
+pkgconfig_DATA = liboping.pc
 
 MOSTLYCLEANFILES = $(pkgconfig_DATA)
 
@@ -64,7 +44,7 @@ bin_PROGRAMS += noping
 
 noping_SOURCES = oping.c
 noping_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_NCURSES=1
-noping_LDADD = liboping.la -lm -lncurses
+noping_LDADD = liboping.la -lm $(NCURSES_LIB)
 if BUILD_WITH_LIBRT
 noping_LDADD += -lrt
 endif

@@ -1,3 +1,13 @@
+liboping (1.6.2-6.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix "hardcodes /usr/lib/perl5":
+    use executable d/libnet-oping-perl.install file, expanding paths with
+    $Config{vendorarch}.
+    (Closes: #752710)
+
+ -- gregor herrmann <gregoa@debian.org>  Sat, 02 Aug 2014 18:44:16 +0200
+
 liboping (1.6.2-6) unstable; urgency=medium
 
   * build dependency on pkg-config (closes: 749058)

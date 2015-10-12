@@ -2,8 +2,9 @@ liboping (1.8.0-2) unstable; urgency=medium
 
   * Accept audible ping patch (closes: #801068)
   * Regenerating package should fix gzip timestamp issue (closes: #749708)
+  * Swizzle packaging repo pointer to active package maintenance repo
 
- -- Barak A. Pearlmutter <bap@debian.org>  Mon, 12 Oct 2015 13:46:41 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 12 Oct 2015 13:50:51 +0100
 
 liboping (1.8.0-1) unstable; urgency=medium
 

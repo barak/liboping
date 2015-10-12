@@ -1,0 +1,137 @@
+From: =?utf-8?q?Antoine_Beaupr=C3=A9?= <anarcat@koumbit.org>
+Date: Mon, 5 Oct 2015 16:09:38 -0400
+Subject: add bell output on successful pings
+
+the rationale here is that it's actually pretty hard to do this with a
+regular ping. you need a silly shell loop and it doesn't always work
+right everywhere, because the output of the system ping is
+platform-dependant. it also buffers stdout in some weird ways sometimes.
+
+therefore, i think it's a great addition to oping.
+
+the purpose of this is that it can be useful to "hear" ping packets
+come back when doing network diagnostics. obviously, this will be
+useless in finding out *failed* hosts if multiple hosts are selected,
+as any sucessful host will produce a beep. but it can nevertheless be
+used to trace network cables or problems without looking at the
+console. i also use audible pings to let me know when a hosts returns
+after a reboot.
+
+Note that I had to struggle quite a bit to make my terminal bell work,
+the following articles were used to generate documentation on how to
+make that work reliably:
+
+https://askubuntu.com/questions/228096/terminal-bell-doesnt-ring
+
+also see the following for the original inspiration for this:
+
+http://catb.org/jargon/html/P/ping.html
+https://groups.google.com/forum/#!msg/comp.sys.next/JDaeD8oqarU/v8xaDS8kXM0J
+
+Conflicts:
+	src/oping.c
+---
+ src/mans/oping.pod | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ src/oping.c        | 13 ++++++++++++-
+ 2 files changed, 56 insertions(+), 1 deletion(-)
+
+diff --git a/src/mans/oping.pod b/src/mans/oping.pod
+index c001451..4f36cc6 100644
+--- a/src/mans/oping.pod
++++ b/src/mans/oping.pod
+@@ -220,6 +220,50 @@ remainder.
+ 
+ =back
+ 
++=item B<-b>
++
++Audible bell. Print a ASCII BEL character (\a or 0x07) when a packet
++is received before the timeout occurs. This can be useful in order to
++monitory hosts' connectivity without looking physically at the
++console, for example to trace network cables (start audible beep,
++disconnect cable N: if beep stops, the cable was in use) or to tell
++when a host returns from a reboot.
++
++This relies on the terminal bell to be functional. To enable the
++terminal bell, use the following instructions.
++
++=over 4
++
++=item
++
++the visual bell is disabled in your terminal emulator, with the +vb
++commandline flag or the following in your .Xresources:
++
++ XTerm*visualBell: false
++
++=item
++
++the PC speaker module is loaded in your kernel:
++
++ modprobe pcspkr
++
++=item
++
++X11 has the terminal bell enabled:
++
++ xset b on; xset b 100
++
++=item
++
++and finally, if you are using PulseAudio, that the module-x11-bell
++module is loaded with a pre-loaded sample defined in your pulseaudio
++configuration:
++
++ load-sample-lazy x11-bell /usr/share/sounds/freedesktop/stereo/complete.oga
++ load-module module-x11-bell sample=x11-bell
++
++=back
++
+ =item B<-P> I<percent>
+ 
+ Configures the latency percentile to report. I<percent> must be a number
+diff --git a/src/oping.c b/src/oping.c
+index e6be877..ba5671d 100644
+--- a/src/oping.c
++++ b/src/oping.c
+@@ -206,6 +206,7 @@ static double  opt_exit_status_threshold = 1.0;
+ static int     opt_show_graph = 1;
+ static int     opt_utf8       = 0;
+ #endif
++static int     opt_bell       = 0;
+ 
+ static int host_num = 0;
+ 
+@@ -645,7 +646,7 @@ static int read_options (int argc, char **argv) /* {{{ */
+ 
+ 	while (1)
+ 	{
+-		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:P:"
++		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:P:b"
+ #if USE_NCURSES
+ 				"uUg:"
+ #endif
+@@ -761,6 +762,9 @@ static int read_options (int argc, char **argv) /* {{{ */
+ 				opt_utf8 = 1;
+ 				break;
+ #endif
++			case 'b':
++				opt_bell = 1;
++				break;
+ 
+ 			case 'Z':
+ 			{
+@@ -1546,6 +1550,13 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
+ #if USE_NCURSES
+ 		}
+ #endif
++                if (opt_bell) {
++#if USE_NCURSES
++			beep();
++#else
++			HOST_PRINTF ("\a");
++#endif
++                }
+ 	}
+ 	else /* if (!(latency > 0.0)) */
+ 	{

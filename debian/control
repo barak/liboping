@@ -11,8 +11,8 @@ Build-Depends: debhelper (>= 9),
 	libncursesw5-dev
 Standards-Version: 3.9.6
 Homepage: http://noping.cc
-Vcs-Git: git://git.tokkee.org/pkg-liboping.git
-Vcs-Browser: http://git.tokkee.org/?p=pkg-liboping.git
+Vcs-Git: git://github.com/barak/liboping.git
+Vcs-Browser: https://github.com/barak/liboping
 
 Package: liboping-dev
 Section: libdevel

@@ -1,15 +1,11 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
-AC_INIT([liboping],
-	[1.8.0],
-	[liboping@verplant.org],
-	[],
-	[http://noping.cc/])
+AC_PREREQ([2.69])
+AC_INIT([liboping],[1.8.0],[liboping@verplant.org],[],[http://noping.cc/])
 AC_CONFIG_SRCDIR([src/liboping.c])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([dist-bzip2])
+AM_INIT_AUTOMAKE([dist-bzip2 -Wall])
 AC_LANG([C])
 
 AC_PREFIX_DEFAULT("/opt/oping")
@@ -53,7 +49,7 @@ LT_INIT([dlopen])
 PKG_INSTALLDIR
 
 AC_ARG_WITH(pkgconfigdir,
-	    AC_HELP_STRING([--with-pkgconfigdir], [Use the specified pkgconfig dir (default is libdir/pkgconfig)]),
+	    AS_HELP_STRING([--with-pkgconfigdir],[Use the specified pkgconfig dir (default is libdir/pkgconfig)]),
 	    [pkgconfigdir="${withval}"],
 	    [pkgconfigdir='${libdir}/pkgconfig'])
 AC_SUBST([pkgconfigdir])

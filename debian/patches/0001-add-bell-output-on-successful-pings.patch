@@ -36,10 +36,10 @@ Conflicts:
  2 files changed, 56 insertions(+), 1 deletion(-)
 
 diff --git a/src/mans/oping.pod b/src/mans/oping.pod
-index c001451..4f36cc6 100644
+index 6f1f5c3..f1e0807 100644
 --- a/src/mans/oping.pod
 +++ b/src/mans/oping.pod
-@@ -220,6 +220,50 @@ remainder.
+@@ -238,6 +238,50 @@ remainder.
  
  =back
  
@@ -91,27 +91,27 @@ index c001451..4f36cc6 100644
  
  Configures the latency percentile to report. I<percent> must be a number
 diff --git a/src/oping.c b/src/oping.c
-index e6be877..ba5671d 100644
+index 883c862..0cfe646 100644
 --- a/src/oping.c
 +++ b/src/oping.c
-@@ -206,6 +206,7 @@ static double  opt_exit_status_threshold = 1.0;
- static int     opt_show_graph = 1;
+@@ -209,6 +209,7 @@ static int     opt_show_graph = 1;
  static int     opt_utf8       = 0;
  #endif
+ static char   *opt_outfile    = NULL;
 +static int     opt_bell       = 0;
  
- static int host_num = 0;
- 
-@@ -645,7 +646,7 @@ static int read_options (int argc, char **argv) /* {{{ */
+ static int host_num  = 0;
+ static FILE *outfile = NULL;
+@@ -652,7 +653,7 @@ static int read_options (int argc, char **argv) /* {{{ */
  
  	while (1)
  	{
--		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:P:"
-+		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:P:b"
+-		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:O:P:m:w:"
++		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:O:P:m:w:b"
  #if USE_NCURSES
  				"uUg:"
  #endif
-@@ -761,6 +762,9 @@ static int read_options (int argc, char **argv) /* {{{ */
+@@ -791,6 +792,9 @@ static int read_options (int argc, char **argv) /* {{{ */
  				opt_utf8 = 1;
  				break;
  #endif
@@ -121,7 +121,7 @@ index e6be877..ba5671d 100644
  
  			case 'Z':
  			{
-@@ -1546,6 +1550,13 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
+@@ -1576,6 +1580,13 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
  #if USE_NCURSES
  		}
  #endif

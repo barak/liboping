@@ -11,10 +11,6 @@ LIBPERL_VERSION := $(shell \
 %:
 	dh $@ --with autoreconf --parallel
 
-override_dh_autoreconf:
-	-mkdir -p m4
-	dh_autoreconf
-
 override_dh_auto_configure:
 	dh_auto_configure -- --with-perl-bindings="INSTALLDIRS=vendor"
 

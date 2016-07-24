@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 9),
 	chrpath,
 	perl,
 	libncursesw5-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: http://noping.cc
 Vcs-Git: git://github.com/barak/liboping.git
 Vcs-Browser: https://github.com/barak/liboping

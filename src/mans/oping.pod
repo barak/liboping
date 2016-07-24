@@ -31,7 +31,7 @@ supports colors.
 
 =item B<-4>
 
-Force the use of IPv4. 
+Force the use of IPv4.
 
 =item B<-6>
 
@@ -45,6 +45,12 @@ Send (and receive) I<count> ICMP packets, then stop and exit.
 
 Send one ICMP packet (per host) each I<interval> seconds. This can be a
 floating-point number to specify sub-second precision.
+
+=item B<-w> I<timeout>
+
+Specifies the time to wait for an C<ECHO REPLY> packet before giving up, in
+seconds. This can be a floating point number for sub-second precision. Defaults
+to B<1.0> seconds.
 
 =item B<-t> I<ttl>
 
@@ -78,6 +84,12 @@ possible to I<temporarily> drop privileges. The alternative behavior is: If the
 real user ID (as returned by L<getuid(2)>) and the effective user ID (as
 returned by L<geteuid(2)>) differ, the only argument allowed for this option is
 "-" (i.e. standard input).
+
+=item B<-O> I<filename>
+
+Write measurements in I<Comma Separated Values> (CSV) format to I<filename>.
+This option writes three columns per row: wall clock time in (fractional)
+seconds since epoch, hostname and the round trip time in milliseconds.
 
 =item B<-Q> I<qos>
 
@@ -166,6 +178,12 @@ I<Explicit Congestion Notification> (ECN), even if the deprecated
 I<Type of Service> (ToS) aliases were used to specify the bits of outgoing
 packets.
 
+=item B<-m> I<mark>
+
+I<Linux only> Sets the I<mark> (an integer number) on outgoing packets. This
+can be used by L<iptables(8)> and other networking infrastructure for filtering
+and routing.
+
 =item B<-u>|B<-U>
 
 I<noping only> B<-u> forces UTF-8 output, B<-U> disables UTF-8 output. If
@@ -205,7 +223,7 @@ whiskers and 2.5% above.
 
   |----------[#####|##########]--------------------------------------------|
   ^          ^     ^          ^                                            ^
- 2.75%      25%   50%        75%                                         97.5%
+ 2.5%       25%   50%        75%                                         97.5%
 
 =item B<histogram>
 
@@ -258,11 +276,11 @@ printed in red.
 
 =head1 SEE ALSO
 
-L<ping(8)>, L<http://www.fping.com/>, L<liboping(3)>
+L<ping(8)>, L<http://fping.org/>, L<liboping(3)>
 
 =head1 AUTHOR
 
 liboping is written by Florian "octo" Forster E<lt>ff at octo.itE<gt>.
-Its homepage can be found at L<http://verplant.org/liboping/>.
+Its homepage can be found at L<http://noping.cc/>.
 
-Copyright (c) 2005-2011 by Florian "octo" Forster.
+Copyright (c) 2005-2016 by Florian "octo" Forster.

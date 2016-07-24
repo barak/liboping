@@ -1,6 +1,6 @@
 /**
  * Object oriented C module to send ICMP and ICMPv6 `echo's.
- * Copyright (C) 2006-2014  Florian octo Forster <ff at octo.it>
+ * Copyright (C) 2006-2016  Florian octo Forster <ff at octo.it>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -192,9 +192,11 @@ typedef struct ping_context
 } ping_context_t;
 
 static double  opt_interval   = 1.0;
+static double  opt_timeout    = PING_DEF_TIMEOUT;
 static int     opt_addrfamily = PING_DEF_AF;
 static char   *opt_srcaddr    = NULL;
 static char   *opt_device     = NULL;
+static char   *opt_mark       = NULL;
 static char   *opt_filename   = NULL;
 static int     opt_count      = -1;
 static int     opt_send_ttl   = 64;
@@ -206,8 +208,10 @@ static double  opt_exit_status_threshold = 1.0;
 static int     opt_show_graph = 1;
 static int     opt_utf8       = 0;
 #endif
+static char   *opt_outfile    = NULL;
 
-static int host_num = 0;
+static int host_num  = 0;
+static FILE *outfile = NULL;
 
 #if USE_NCURSES
 static WINDOW *main_win = NULL;
@@ -430,12 +434,15 @@ static void usage_exit (const char *name, int status) /* {{{ */
 			"  -4|-6        force the use of IPv4 or IPv6\n"
 			"  -c count     number of ICMP packets to send\n"
 			"  -i interval  interval with which to send ICMP packets\n"
+			"  -w timeout   time to wait for replies, in seconds\n"
 			"  -t ttl       time to live for each ICMP packet\n"
 			"  -Q qos       Quality of Service (QoS) of outgoing packets\n"
 			"               Use \"-Q help\" for a list of valid options.\n"
 			"  -I srcaddr   source address\n"
 			"  -D device    outgoing interface name\n"
-			"  -f filename  filename to read hosts from\n"
+			"  -m mark      mark to set on outgoing packets\n"
+			"  -f filename  read hosts from <filename>\n"
+			"  -O filename  write RTT measurements to <filename>\n"
 #if USE_NCURSES
 			"  -u / -U      force / disable UTF-8 output\n"
 			"  -g graph     graph type to draw\n"
@@ -444,8 +451,8 @@ static void usage_exit (const char *name, int status) /* {{{ */
 			"  -Z percent   Exit with non-zero exit status if more than this percentage of\n"
 			"               probes timed out. (default: never)\n"
 
-			"\noping "PACKAGE_VERSION", http://verplant.org/liboping/\n"
-			"by Florian octo Forster <octo@verplant.org>\n"
+			"\noping "PACKAGE_VERSION", http://noping.cc/\n"
+			"by Florian octo Forster <ff@octo.it>\n"
 			"for contributions see `AUTHORS'\n",
 			name);
 	exit (status);
@@ -645,7 +652,7 @@ static int read_options (int argc, char **argv) /* {{{ */
 
 	while (1)
 	{
-		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:P:"
+		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:O:P:m:w:"
 #if USE_NCURSES
 				"uUg:"
 #endif
@@ -698,6 +705,18 @@ static int read_options (int argc, char **argv) /* {{{ */
 				}
 				break;
 
+			case 'w':
+				{
+					char *endp = NULL;
+					double t = strtod (optarg, &endp);
+					if ((optarg[0] != 0) && (endp != NULL) && (*endp == 0))
+						opt_timeout = t;
+					else
+						fprintf (stderr, "Ignoring invalid timeout: %s\n",
+								optarg);
+				}
+				break;
+
 			case 'I':
 				{
 					if (opt_srcaddr != NULL)
@@ -708,6 +727,10 @@ static int read_options (int argc, char **argv) /* {{{ */
 
 			case 'D':
 				opt_device = optarg;
+				break;
+
+			case 'm':
+				opt_mark = optarg;
 				break;
 
 			case 't':
@@ -724,6 +747,13 @@ static int read_options (int argc, char **argv) /* {{{ */
 
 			case 'Q':
 				set_opt_send_qos (optarg);
+				break;
+
+			case 'O':
+				{
+					free (opt_outfile);
+					opt_outfile = strdup (optarg);
+				}
 				break;
 
 			case 'P':
@@ -1571,6 +1601,21 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
 #endif
 	}
 
+	if (outfile != NULL)
+	{
+		struct timespec ts = { 0, 0 };
+
+		if (clock_gettime (CLOCK_REALTIME, &ts) == 0)
+		{
+			double t = ((double) ts.tv_sec) + (((double) ts.tv_nsec) / 1000000000.0);
+
+			if ((sequence % 32) == 0)
+				fprintf (outfile, "#time,host,latency[ms]\n");
+
+			fprintf (outfile, "%.3f,\"%s\",%.2f\n", t, context->host, latency);
+		}
+	}
+
 #if USE_NCURSES
 	update_stats_from_context (context, iter);
 	wrefresh (main_win);
@@ -1664,7 +1709,7 @@ int main (int argc, char **argv) /* {{{ */
 	}
 #endif
 
-        setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "");
 	optind = read_options (argc, argv);
 
 #if !_POSIX_SAVED_IDS
@@ -1715,6 +1760,12 @@ int main (int argc, char **argv) /* {{{ */
 		/* printf ("ts_int = %i.%09li\n", (int) ts_int.tv_sec, ts_int.tv_nsec); */
 	}
 
+	if (ping_setopt (ping, PING_OPT_TIMEOUT, (void*)(&opt_timeout)) != 0)
+	{
+		fprintf (stderr, "Setting timeout failed: %s\n",
+				ping_get_error (ping));
+	}
+
 	if (opt_addrfamily != PING_DEF_AF)
 		ping_setopt (ping, PING_OPT_AF, (void *) &opt_addrfamily);
 
@@ -1733,6 +1784,24 @@ int main (int argc, char **argv) /* {{{ */
 		{
 			fprintf (stderr, "Setting device failed: %s\n",
 					ping_get_error (ping));
+		}
+	}
+
+	if (opt_mark != NULL)
+	{
+		char *endp = NULL;
+		int mark = (int) strtol (opt_mark, &endp, /* base = */ 0);
+		if ((opt_mark[0] != 0) && (endp != NULL) && (*endp == 0))
+		{
+			if (ping_setopt(ping, PING_OPT_MARK, (void*)(&mark)) != 0)
+			{
+				fprintf (stderr, "Setting mark failed: %s\n",
+					ping_get_error (ping));
+			}
+		}
+		else
+		{
+			fprintf(stderr, "Ignoring invalid mark: %s\n", optarg);
 		}
 	}
 
@@ -1846,6 +1915,17 @@ int main (int argc, char **argv) /* {{{ */
 	saved_set_uid = (uid_t) -1;
 #endif
 
+	if (opt_outfile != NULL)
+	{
+		outfile = fopen (opt_outfile, "a");
+		if (outfile == NULL)
+		{
+			fprintf (stderr, "opening \"%s\" failed: %s\n",
+				 opt_outfile, strerror (errno));
+			exit (EXIT_FAILURE);
+		}
+	}
+
 	ping_initialize_contexts (ping);
 
 	if (i == 0)
@@ -1931,6 +2011,12 @@ int main (int argc, char **argv) /* {{{ */
 	status = post_loop_hook (ping);
 
 	ping_destroy (ping);
+
+	if (outfile != NULL)
+	{
+		fclose (outfile);
+		outfile = NULL;
+	}
 
 	if (status == 0)
 		exit (EXIT_SUCCESS);

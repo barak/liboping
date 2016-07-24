@@ -1,0 +1,21 @@
+From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
+Date: Mon, 25 Jul 2016 00:15:54 +0200
+Subject: typo
+
+---
+ bindings/perl/lib/Net/Oping.pm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bindings/perl/lib/Net/Oping.pm b/bindings/perl/lib/Net/Oping.pm
+index ba67f73..67214b5 100644
+--- a/bindings/perl/lib/Net/Oping.pm
++++ b/bindings/perl/lib/Net/Oping.pm
+@@ -326,7 +326,7 @@ values would be:
+ 
+   $droprate = { host1 => 0, host2 => 3, host3 => undef, ... };
+ 
+-Hosts to which no data has been sent yet will return C<undef> ("host3" in thie
++Hosts to which no data has been sent yet will return C<undef> ("host3" in this
+ example).
+ 
+ =cut

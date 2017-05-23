@@ -11,7 +11,7 @@ LIBPERL_VERSION := $(shell \
  echo -n "$${pkg_ver%-*}-$${pm_ver}-$${pkg_ver\#\#*-}")
 
 %:
-	dh $@ --with autoreconf --parallel
+	dh $@
 
 override_dh_auto_configure:
 	dh_auto_configure -- --with-perl-bindings="INSTALLDIRS=vendor"

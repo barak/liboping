@@ -7,7 +7,7 @@ Subject: autoupdate and enable automake -Wall
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index aea4efb..8b012a3 100644
+index 6ac83f9..df5b612 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -9,7 +9,7 @@ AC_INIT([liboping],
@@ -19,8 +19,8 @@ index aea4efb..8b012a3 100644
  AC_LANG([C])
  
  AC_PREFIX_DEFAULT("/opt/oping")
-@@ -53,7 +53,7 @@ LT_INIT([dlopen])
- PKG_INSTALLDIR
+@@ -54,7 +54,7 @@ LT_INIT([dlopen])
+ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR], [])
  
  AC_ARG_WITH(pkgconfigdir,
 -	    AC_HELP_STRING([--with-pkgconfigdir], [Use the specified pkgconfig dir (default is libdir/pkgconfig)]),

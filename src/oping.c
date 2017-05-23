@@ -1,6 +1,6 @@
 /**
  * Object oriented C module to send ICMP and ICMPv6 `echo's.
- * Copyright (C) 2006-2016  Florian octo Forster <ff at octo.it>
+ * Copyright (C) 2006-2017  Florian octo Forster <ff at octo.it>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,11 +82,17 @@
 /* http://newsgroups.derkeiler.com/Archive/Rec/rec.games.roguelike.development/2010-09/msg00050.html */
 # define _X_OPEN_SOURCE_EXTENDED
 
-# if HAVE_NCURSESW_NCURSES_H
-#  include <ncursesw/ncurses.h>
-# elif HAVE_NCURSES_H
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
 #  include <ncurses.h>
-# endif
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
 
 # define OPING_GREEN 1
 # define OPING_YELLOW 2
@@ -172,7 +178,7 @@ typedef struct ping_context
 	 * and HISTORY_SIZE_MAX. */
 	size_t history_size;
 
-	/* Number "received" entries in the history, i.e. non-NAN entries. */
+	/* Total number of reponses received. */
 	size_t history_received;
 
 	/* Index of the next RTT to be written to history_by_time. This wraps
@@ -209,6 +215,7 @@ static int     opt_show_graph = 1;
 static int     opt_utf8       = 0;
 #endif
 static char   *opt_outfile    = NULL;
+static int     opt_bell       = 0;
 
 static int host_num  = 0;
 static FILE *outfile = NULL;
@@ -225,22 +232,17 @@ static void sigint_handler (int signal) /* {{{ */
 	opt_count = 0;
 } /* }}} void sigint_handler */
 
-static ping_context_t *context_create (void) /* {{{ */
+static ping_context_t *context_create () /* {{{ */
 {
-	ping_context_t *ret;
-
-	if ((ret = malloc (sizeof (ping_context_t))) == NULL)
+	ping_context_t *ctx = calloc (1, sizeof (*ctx));
+	if (ctx == NULL)
 		return (NULL);
 
-	memset (ret, '\0', sizeof (ping_context_t));
-
-	ret->latency_total = 0.0;
-
 #if USE_NCURSES
-	ret->window = NULL;
+	ctx->window = NULL;
 #endif
 
-	return (ret);
+	return (ctx);
 } /* }}} ping_context_t *context_create */
 
 static void context_destroy (ping_context_t *context) /* {{{ */
@@ -291,6 +293,11 @@ static void clean_history (ping_context_t *ctx) /* {{{ */
 	/* Copy all values from by_time to by_value. */
 	memcpy (ctx->history_by_value, ctx->history_by_time,
 			sizeof (ctx->history_by_time));
+
+	/* Remove impossible values caused by adding a new host */
+	for (i = 0; i < ctx->history_size; i++)
+		if (ctx->history_by_value[i] < 0)
+			ctx->history_by_value[i] = NAN;
 
 	/* Sort all RTTs. */
 	qsort (ctx->history_by_value, ctx->history_size, sizeof
@@ -396,6 +403,7 @@ static int ping_initialize_contexts (pingobj_t *ping) /* {{{ */
 {
 	pingobj_iter_t *iter;
 	int index;
+	size_t history_size = 0;
 
 	if (ping == NULL)
 		return (EINVAL);
@@ -407,9 +415,26 @@ static int ping_initialize_contexts (pingobj_t *ping) /* {{{ */
 	{
 		ping_context_t *context;
 		size_t buffer_size;
+		int i;
+
+		context = ping_iterator_get_context(iter);
+
+		/* if this is a previously existing host, do not recreate it */
+		if (context != NULL)
+		{
+			history_size = context->history_size;
+			context->index = index++;
+			continue;
+		}
 
 		context = context_create ();
 		context->index = index;
+
+		/* start new hosts at the same graph point as old hosts */
+		context->history_size = history_size;
+		context->history_index = history_size;
+		for (i = 0; i < history_size; i++)
+			context->history_by_time[i] = -1;
 
 		buffer_size = sizeof (context->host);
 		ping_iterator_get_info (iter, PING_INFO_HOSTNAME, context->host, &buffer_size);
@@ -652,7 +677,7 @@ static int read_options (int argc, char **argv) /* {{{ */
 
 	while (1)
 	{
-		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:O:P:m:w:"
+		optchar = getopt (argc, argv, "46c:hi:I:t:Q:f:D:Z:O:P:m:w:b"
 #if USE_NCURSES
 				"uUg:"
 #endif
@@ -791,6 +816,9 @@ static int read_options (int argc, char **argv) /* {{{ */
 				opt_utf8 = 1;
 				break;
 #endif
+			case 'b':
+				opt_bell = 1;
+				break;
 
 			case 'Z':
 			{
@@ -995,7 +1023,7 @@ static int update_graph_boxplot (ping_context_t *ctx) /* {{{ */
 } /* }}} int update_graph_boxplot */
 
 static int update_graph_prettyping (ping_context_t *ctx, /* {{{ */
-		double latency, unsigned int sequence)
+		double latency)
 {
 	size_t x;
 	size_t x_max;
@@ -1041,6 +1069,10 @@ static int update_graph_prettyping (ping_context_t *ctx, /* {{{ */
 
 		index = (history_offset + x) % ctx->history_size;
 		latency = ctx->history_by_time[index];
+
+		if (latency < 0) {
+			continue;
+		}
 
 		if (latency >= 0.0)
 		{
@@ -1213,12 +1245,6 @@ static int update_stats_from_context (ping_context_t *ctx, pingobj_iter_t *iter)
 	ping_iterator_get_info (iter, PING_INFO_LATENCY,
 			&latency, &buffer_len);
 
-	unsigned int sequence = 0;
-	buffer_len = sizeof (sequence);
-	ping_iterator_get_info (iter, PING_INFO_SEQUENCE,
-			&sequence, &buffer_len);
-
-
 	if ((ctx == NULL) || (ctx->window == NULL))
 		return (EINVAL);
 
@@ -1254,7 +1280,7 @@ static int update_stats_from_context (ping_context_t *ctx, pingobj_iter_t *iter)
 	}
 
 	if (opt_show_graph == 1)
-		update_graph_prettyping (ctx, latency, sequence);
+		update_graph_prettyping (ctx, latency);
 	else if (opt_show_graph == 2)
 		update_graph_histogram (ctx);
 	else if (opt_show_graph == 3)
@@ -1298,6 +1324,8 @@ static int on_resize (pingobj_t *ping) /* {{{ */
 
 		if (context->window != NULL)
 		{
+			werase (context->window);
+			wrefresh (context->window);
 			delwin (context->window);
 			context->window = NULL;
 		}
@@ -1328,6 +1356,30 @@ static int check_resize (pingobj_t *ping) /* {{{ */
 			else if (opt_show_graph > 0)
 				opt_show_graph++;
 		}
+		else if (key == 'a')
+		{
+			char host[NI_MAXHOST];
+
+			wprintw (main_win, "New Host: ");
+			echo ();
+			wgetnstr (main_win, host, sizeof (host));
+			noecho ();
+
+			if (ping_host_add(ping, host) < 0)
+			{
+				const char *errmsg = ping_get_error (ping);
+
+				wprintw (main_win, "Adding host `%s' failed: %s\n", host, errmsg);
+			}
+			else
+			{
+				/* FIXME - scroll main_win correctly so that old
+				 * data is still visible */
+				need_resize = 1;
+				host_num = ping_iterator_count(ping);
+				ping_initialize_contexts(ping);
+			}
+		}
 	}
 
 	if (need_resize)
@@ -1356,10 +1408,11 @@ static int pre_loop_hook (pingobj_t *ping) /* {{{ */
 	if (has_colors () == TRUE)
 	{
 		start_color ();
-		init_pair (OPING_GREEN,  COLOR_GREEN,  /* default = */ 0);
-		init_pair (OPING_YELLOW, COLOR_YELLOW, /* default = */ 0);
-		init_pair (OPING_RED,    COLOR_RED,    /* default = */ 0);
-		init_pair (OPING_GREEN_HIST,  COLOR_GREEN,  COLOR_BLACK);
+		use_default_colors ();
+		init_pair (OPING_GREEN,  COLOR_GREEN,  /* default = */ -1);
+		init_pair (OPING_YELLOW, COLOR_YELLOW, /* default = */ -1);
+		init_pair (OPING_RED,    COLOR_RED,    /* default = */ -1);
+		init_pair (OPING_GREEN_HIST,  COLOR_GREEN,  -1);
 		init_pair (OPING_YELLOW_HIST, COLOR_YELLOW, COLOR_GREEN);
 		init_pair (OPING_RED_HIST,    COLOR_RED,    COLOR_YELLOW);
 	}
@@ -1576,6 +1629,13 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
 #if USE_NCURSES
 		}
 #endif
+                if (opt_bell) {
+#if USE_NCURSES
+			beep();
+#else
+			HOST_PRINTF ("\a");
+#endif
+                }
 	}
 	else /* if (!(latency > 0.0)) */
 	{
@@ -1603,11 +1663,10 @@ static void update_host_hook (pingobj_iter_t *iter, /* {{{ */
 
 	if (outfile != NULL)
 	{
-		struct timespec ts = { 0, 0 };
-
-		if (clock_gettime (CLOCK_REALTIME, &ts) == 0)
+		struct timeval tv = {0};
+		if (gettimeofday (&tv, NULL) == 0)
 		{
-			double t = ((double) ts.tv_sec) + (((double) ts.tv_nsec) / 1000000000.0);
+			double t = ((double) tv.tv_sec) + (((double) tv.tv_usec) / 1000000.0);
 
 			if ((sequence % 32) == 0)
 				fprintf (outfile, "#time,host,latency[ms]\n");

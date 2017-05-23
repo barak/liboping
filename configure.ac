@@ -2,7 +2,7 @@
 
 AC_PREREQ([2.65])
 AC_INIT([liboping],
-	[1.9.0],
+	[1.10.0],
 	[liboping@verplant.org],
 	[],
 	[http://noping.cc/])
@@ -23,9 +23,9 @@ AC_SUBST(LIBOPING_MINOR)
 AC_SUBST(LIBOPING_PATCH)
 
 # ABI version
-LIBOPING_CURRENT=2
-LIBOPING_REVISION=11
-LIBOPING_AGE=2
+LIBOPING_CURRENT=3
+LIBOPING_REVISION=0
+LIBOPING_AGE=3
 AC_SUBST(LIBOPING_CURRENT)
 AC_SUBST(LIBOPING_REVISION)
 AC_SUBST(LIBOPING_AGE)
@@ -50,7 +50,8 @@ AC_ARG_VAR(PERL, [Perl interpreter command])
 LT_INIT([dlopen])
 
 # pkg-config interface
-PKG_INSTALLDIR
+# PKG_INSTALLDIR is only available for pkg-config >= 0.27
+m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR], [])
 
 AC_ARG_WITH(pkgconfigdir,
 	    AC_HELP_STRING([--with-pkgconfigdir], [Use the specified pkgconfig dir (default is libdir/pkgconfig)]),
@@ -201,30 +202,31 @@ AC_SUBST(LIBOPING_PC_LIBS_PRIVATE)
 
 AC_SEARCH_LIBS([nanosleep],[rt],[],
 		[AC_MSG_ERROR([cannot find nanosleep])])
-AC_SEARCH_LIBS([clock_gettime],[rt],[],
-		[AC_MSG_ERROR([cannot find clock_gettime])])
 
-with_ncurses="no"
-AC_CHECK_HEADERS(ncursesw/ncurses.h ncurses.h, [with_ncurses="yes"], [])
-if test "x$with_ncurses" = "xyes"
-then
-	have_ncursesw="no"
-	have_ncurses="no"
-	NCURSES_LIB=""
+AC_ARG_WITH(ncurses, AS_HELP_STRING([--with-ncurses], [Build oping CLI tool with ncurses support]))
+AS_IF([test "x$with_ncurses" != "xno"], [
+	can_build_with_ncurses="no"
+	PKG_CHECK_MODULES([NCURSES], [ncursesw], [can_build_with_ncurses=yes], [
+		PKG_CHECK_MODULES([NCURSES], [ncurses], [can_build_with_ncurses=yes], [
+			AC_CHECK_LIB(ncursesw, mvwprintw, [NCURSES_LIBS="-lncursesw"; can_build_with_ncurses=yes], [
+				AC_CHECK_LIB(ncurses, mvwprintw, [NCURSES_LIBS="-lncurses"; can_build_with_ncurses=yes])
+			])
+		])
+	])
 
-	AC_CHECK_LIB(ncursesw, mvwprintw, [have_ncursesw="yes"], [have_ncursesw="no"])
-	AC_CHECK_LIB(ncurses, mvwprintw, [have_ncurses="yes"], [have_ncurses="no"])
+	AS_IF([test "x$can_build_with_ncurses" = "xyes"], [
+		AC_CHECK_HEADERS([ncursesw/curses.h ncursesw.h ncurses/curses.h ncurses.h], [can_build_with_ncurses=yes; break;], [can_build_with_ncurses=no])
+	])
 
-	if test "x$have_ncursesw" = "xyes"; then
-		NCURSES_LIB="-lncursesw"
-	else if test "x$have_ncurses" = "xyes"; then
-		NCURSES_LIB="-lncurses"
-	else
-		with_ncurses="no"
-	fi; fi
-	AC_SUBST(NCURSES_LIB)
-fi
-AM_CONDITIONAL(BUILD_WITH_LIBNCURSES, test "x$with_ncurses" = "xyes")
+	AS_IF([test "x$can_build_with_ncurses" = "xno" && test "x$with_ncurses" = "xyes"], [
+		AC_MSG_ERROR([ncurses not found but explicit enabled])
+	],
+	[test "x$can_build_with_ncurses" = "xno"], [
+		AC_MSG_WARN([Will not build oping with ncurses support -- no suiteable ncurses installation found])
+	])
+])
+
+AM_CONDITIONAL(BUILD_WITH_LIBNCURSES, test "x$with_ncurses" != "xno" && test "x$can_build_with_ncurses" = "xyes")
 
 AC_FUNC_STRERROR_R
 

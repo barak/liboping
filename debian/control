@@ -3,12 +3,12 @@ Section: libs
 Priority: optional
 Maintainer: Sebastian Harl <tokkee@debian.org>
 Uploaders: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper (>= 11),
 	pkg-config,
 	chrpath,
 	perl,
 	libncursesw5-dev
-Standards-Version: 3.9.8
+Standards-Version: 4.1.3
 Homepage: http://noping.cc
 Vcs-Git: git://github.com/barak/liboping.git
 Vcs-Browser: https://github.com/barak/liboping

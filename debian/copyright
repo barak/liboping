@@ -2,7 +2,7 @@ This package was debianized by Sebastian Harl <tokkee@debian.org> on
 Mon, 10 Jul 2006 00:29:07 +0200.
 
 It was downloaded from <http://verplant.org/liboping/files/>.
-See also git://github.com/octo/liboping.git
+See also https://github.com/octo/liboping
 
 Upstream Author:
 	Florian Forster <ff@octo.it>

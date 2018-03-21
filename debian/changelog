@@ -1,3 +1,13 @@
+liboping (1.10.0-2) unstable; urgency=medium
+
+  * Bump policy
+  * dh11
+  * Merge upstream bug fixes and suid fix a88c51f3 (closes: #864184)
+  * Secure some URLs
+  * Obay arbitrary lintian dictates
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 21 Mar 2018 13:57:02 +0000
+
 liboping (1.10.0-1) unstable; urgency=medium
 
   * New upstream release

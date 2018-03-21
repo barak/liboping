@@ -3,12 +3,13 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+include /usr/share/dpkg/pkg-info.mk
+export DEB_VERSION
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 LIBPERL_VERSION := $(shell \
  pm_ver=$$(perl -MExtUtils::MM -e 'print MM->parse_version("bindings/perl/lib/Net/Oping.pm");'); \
- pkg_ver=$$(dpkg-parsechangelog | egrep '^Version:' | cut -d' ' -f2); \
- echo -n "$${pkg_ver%-*}-$${pm_ver}-$${pkg_ver\#\#*-}")
+ echo -n "$${DEB_VERSION%-*}-$${pm_ver}-$${DEB_VERSION\#\#*-}")
 
 %:
 	dh $@

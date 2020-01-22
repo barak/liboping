@@ -2,6 +2,7 @@ liboping (1.10.0-3) UNRELEASED; urgency=medium
 
   * Trim trailing whitespace.
   * Bump debhelper from old 11 to 12.
+  * Set debhelper-compat version in Build-Depends.
 
  -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 08:23:58 +0000
 

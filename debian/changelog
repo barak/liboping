@@ -1,4 +1,4 @@
-liboping (1.10.0-3) UNRELEASED; urgency=medium
+liboping (1.10.0-3) unstable; urgency=medium
 
   * Swizzle packaging repo to salsa
   * Trim trailing whitespace.
@@ -7,8 +7,9 @@ liboping (1.10.0-3) UNRELEASED; urgency=medium
   * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
     Repository-Browse.
   * ACK/merge NMU (thanks Axel!)
+  * Use setcap instead of setuid on binaries
 
- -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 09:38:59 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 09:20:18 +0000
 
 liboping (1.10.0-2.1) unstable; urgency=high
 

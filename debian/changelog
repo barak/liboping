@@ -1,12 +1,14 @@
 liboping (1.10.0-3) UNRELEASED; urgency=medium
 
+  * Swizzle packaging repo to salsa
   * Trim trailing whitespace.
   * Bump debhelper from old 11 to 12.
   * Set debhelper-compat version in Build-Depends.
   * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
     Repository-Browse.
+  * ACK/merge NMU (thanks Axel!)
 
- -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 08:23:58 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 09:38:59 +0100
 
 liboping (1.10.0-2.1) unstable; urgency=high
 

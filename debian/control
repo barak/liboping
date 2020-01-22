@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Sebastian Harl <tokkee@debian.org>
 Uploaders: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 11),
+Build-Depends: debhelper (>= 12~),
 	pkg-config,
 	chrpath,
 	perl,

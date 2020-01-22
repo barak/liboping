@@ -1,2 +1,3 @@
 0002-autoupdate-and-enable-automake-Wall.patch
 0003-typo.patch
+cherry-pick_18ca4350_ping_host_add_Decrease_buffer_size_to_make_GCCs_truncation_check_happy.patch

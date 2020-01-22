@@ -1,3 +1,9 @@
+liboping (1.10.0-3) UNRELEASED; urgency=medium
+
+  * Trim trailing whitespace.
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 22 Jan 2020 08:23:58 +0000
+
 liboping (1.10.0-2) unstable; urgency=medium
 
   * Bump policy
@@ -294,4 +300,3 @@ liboping (0.3.2-1) unstable; urgency=low
   * Initial release (Closes: #377527).
 
  -- Sebastian Harl <sh@tokkee.org>  Mon, 10 Jul 2006 00:29:07 +0200
-

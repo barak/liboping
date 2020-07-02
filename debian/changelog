@@ -1,8 +1,12 @@
-liboping (1.10.0-4) UNRELEASED; urgency=low
+liboping (1.10.0-4) unstable; urgency=high
 
   * Bump debhelper from old 12 to 13.
+  * Fix FTBFS by rejiggering perl version generation (closes: #963416)
+  * Tell dh_missing to not worry about *.la files
+  * Bump standards version
+  * Mark perl package multi-arch: same per multi-arch hinter
 
- -- Barak A. Pearlmutter <bap@debian.org>  Thu, 02 Jul 2020 21:23:45 -0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 02 Jul 2020 22:37:07 +0100
 
 liboping (1.10.0-3) unstable; urgency=medium
 

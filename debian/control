@@ -9,6 +9,7 @@ Build-Depends: debhelper-compat (= 13),
 	perl,
 	libncursesw5-dev
 Standards-Version: 4.5.0
+Rules-Requires-Root: no
 Homepage: https://noping.cc
 Vcs-Git: https://salsa.debian.org/debian/liboping.git
 Vcs-Browser: https://salsa.debian.org/debian/liboping

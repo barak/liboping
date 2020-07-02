@@ -4,12 +4,11 @@
 #export DH_VERBOSE=1
 
 include /usr/share/dpkg/pkg-info.mk
-export DEB_VERSION
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-LIBPERL_VERSION := $(shell \
- pm_ver=$$(perl -MExtUtils::MM -e 'print MM->parse_version("bindings/perl/lib/Net/Oping.pm");'); \
- echo -n "$${DEB_VERSION%-*}-$${pm_ver}-$${DEB_VERSION\#\#*-}")
+PERL_VERSION := $(shell perl -MExtUtils::MM -e 'print MM->parse_version("bindings/perl/lib/Net/Oping.pm");')
+DEB_DELTA := $(shell echo $(DEB_VERSION) | sed s/$(DEB_VERSION_EPOCH_UPSTREAM)-//)
+LIBPERL_VERSION := $(DEB_VERSION_EPOCH_UPSTREAM)-$(PERL_VERSION)-$(DEB_DELTA)
 
 %:
 	dh $@
